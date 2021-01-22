@@ -57,6 +57,8 @@ namespace RICADO.Omron.Channels
 
         #region Internal Methods
 
+        internal abstract Task InitializeAsync(int timeout, CancellationToken cancellationToken);
+        
         internal async Task<ProcessRequestResult> ProcessRequestAsync(FINSRequest request, int timeout, int retries, CancellationToken cancellationToken)
         {
             // Build the Request into a Message we can Send
@@ -79,7 +81,7 @@ namespace RICADO.Omron.Channels
                 {
                     if (attempts > 1)
                     {
-                        DestroyAndInitializeClient();
+                        await DestroyAndInitializeClient(timeout, cancellationToken);
                     }
                     
                     // Send the Message
@@ -94,6 +96,8 @@ namespace RICADO.Omron.Channels
                     bytesReceived += receiveResult.Bytes;
                     packetsReceived += receiveResult.Packets;
                     responseMessage = receiveResult.Message;
+
+                    break;
                 }
                 catch (OmronException)
                 {
@@ -120,7 +124,7 @@ namespace RICADO.Omron.Channels
 
         #region Protected Methods
 
-        protected abstract void DestroyAndInitializeClient();
+        protected abstract Task DestroyAndInitializeClient(int timeout, CancellationToken cancellationToken);
 
         protected abstract Task<SendMessageResult> SendMessageAsync(ReadOnlyMemory<byte> message, int timeout, CancellationToken cancellationToken);
 

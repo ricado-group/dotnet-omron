@@ -9,7 +9,7 @@ namespace RICADO.Omron.Channels
     {
         #region Private Properties
 
-        private TcpClient _client;
+        private System.Net.Sockets.TcpClient _client;
 
         #endregion
 
@@ -18,7 +18,6 @@ namespace RICADO.Omron.Channels
 
         internal EthernetTCPChannel(string remoteHost, int port) : base(remoteHost, port)
         {
-            initializeClient();
         }
 
         #endregion
@@ -46,9 +45,19 @@ namespace RICADO.Omron.Channels
         #endregion
 
 
+        #region Internal Methods
+
+        internal override Task InitializeAsync(int timeout, CancellationToken cancellationToken)
+        {
+            return initializeClient(timeout, cancellationToken);
+        }
+
+        #endregion
+
+
         #region Protected Methods
 
-        protected override void DestroyAndInitializeClient()
+        protected override async Task DestroyAndInitializeClient(int timeout, CancellationToken cancellationToken)
         {
             try
             {
@@ -63,17 +72,32 @@ namespace RICADO.Omron.Channels
             {
             }
 
-            initializeClient();
+            try
+            {
+                await initializeClient(timeout, cancellationToken);
+            }
+            catch (TimeoutException)
+            {
+                throw new OmronException("Failed to Re-Connect within the Timeout Period to Omron PLC '" + base.RemoteHost + ":" + base.Port + "'");
+            }
+            catch (System.Net.Sockets.SocketException e)
+            {
+                throw new OmronException("Failed to Re-Connect to Omron PLC '" + base.RemoteHost + ":" + base.Port + "'", e);
+            }
         }
 
         protected override async Task<SendMessageResult> SendMessageAsync(ReadOnlyMemory<byte> message, int timeout, CancellationToken cancellationToken)
         {
+            await Task.Delay(50);
 
+            return new SendMessageResult();
         }
 
         protected override async Task<ReceiveMessageResult> ReceiveMessageAsync(int timeout, CancellationToken cancellationToken)
         {
+            await Task.Delay(50);
 
+            return new ReceiveMessageResult();
         }
 
         #endregion
@@ -81,14 +105,16 @@ namespace RICADO.Omron.Channels
 
         #region Private Methods
 
-        private void initializeClient()
+        private async Task initializeClient(int timeout, CancellationToken cancellationToken)
         {
             if (_client != null)
             {
                 return;
             }
 
-            _client = new TcpClient(base.RemoteHost, base.Port);
+            await Task.Delay(50);
+
+            //_client = new TcpClient(base.RemoteHost, base.Port);
 
             // TODO: Connect the Client
         }

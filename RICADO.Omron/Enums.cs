@@ -6,14 +6,25 @@ using System.Threading.Tasks;
 
 namespace RICADO.Omron
 {
+    public enum enConnectionMethod
+    {
+        TCP,
+        UDP,
+    }
+    
     public enum enPLCType
     {
-        NJ_NX_Series,
+        NX1P2,
+        NX102,
+        NJ101,
+        NJ_NX_NY_Series,
+        CJ2,
+        CP1,
         C_Series,
         Unknown,
     }
 
-    public enum enMemoryBitDataType
+    public enum enMemoryBitDataType : byte
     {
         DataMemory = 0x2,
         CommonIO = 0x30,
@@ -22,7 +33,7 @@ namespace RICADO.Omron
         Auxiliary = 0x33,
     }
 
-    public enum enMemoryWordDataType
+    public enum enMemoryWordDataType : byte
     {
         DataMemory = 0x82,
         CommonIO = 0xB0,
@@ -31,7 +42,7 @@ namespace RICADO.Omron
         Auxiliary = 0xB3,
     }
 
-    public enum enFunctionCode
+    internal enum enFunctionCode : byte
     {
         MemoryArea = 0x01,
         ParameterArea = 0x02,
@@ -49,7 +60,7 @@ namespace RICADO.Omron
         SerialGateway = 0x28,
     }
 
-    public enum enMemoryAreaFunctionCode
+    internal enum enMemoryAreaFunctionCode : byte
     {
         Read = 0x01,
         Write = 0x02,
@@ -58,70 +69,70 @@ namespace RICADO.Omron
         Transfer = 0x05,
     }
 
-    public enum enParameterAreaFunctionCode
+    internal enum enParameterAreaFunctionCode : byte
     {
         Read = 0x01,
         Write = 0x02,
         Fill = 0x03,
     }
 
-    public enum enProgramAreaFunctionCode
+    internal enum enProgramAreaFunctionCode : byte
     {
         Read = 0x06,
         Write = 0x07,
         Clear = 0x08,
     }
 
-    public enum enOperatingModeFunctionCode
+    internal enum enOperatingModeFunctionCode : byte
     {
         RunMode = 0x01,
         StopMode = 0x02,
     }
 
-    public enum enMachineConfigurationFunctionCode
+    internal enum enMachineConfigurationFunctionCode : byte
     {
         ReadCPUUnitData = 0x01,
         ReadConnectionData = 0x02,
     }
 
-    public enum enStatusFunctionCode
+    internal enum enStatusFunctionCode : byte
     {
         ReadCPUUnitStatus = 0x01,
         ReadCycleTime = 0x20,
     }
 
-    public enum enTimeDataFunctionCode
+    internal enum enTimeDataFunctionCode : byte
     {
         ReadClock = 0x01,
         WriteClock = 0x02,
     }
 
-    public enum enMessageDisplayFunctionCode
+    internal enum enMessageDisplayFunctionCode : byte
     {
         Read = 0x20,
     }
 
-    public enum enAccessRightsFunctionCode
+    internal enum enAccessRightsFunctionCode : byte
     {
         Acquire = 0x01,
         ForcedAcquire = 0x02,
         Release = 0x03,
     }
 
-    public enum enErrorLogFunctionCode
+    internal enum enErrorLogFunctionCode : byte
     {
         ClearMessages = 0x01,
         Read = 0x02,
         ClearLog = 0x03,
     }
 
-    public enum enFinsWriteLogFunctionCode
+    internal enum enFinsWriteLogFunctionCode : byte
     {
         Read = 0x40,
         Clear = 0x41,
     }
 
-    public enum enFileMemoryFunctionCode
+    internal enum enFileMemoryFunctionCode : byte
     {
         ReadFileName = 0x01,
         ReadSingleFile = 0x02,
@@ -136,13 +147,13 @@ namespace RICADO.Omron
         CreateOrDeleteDirectory = 0x15,
     }
 
-    public enum enDebuggingFunctionCode
+    internal enum enDebuggingFunctionCode : byte
     {
         ForceBits = 0x01,
         ClearForcedBits = 0x02,
     }
 
-    public enum enSerialGatewayFunctionCode
+    internal enum enSerialGatewayFunctionCode : byte
     {
         ConvertToCompoWayFCommand = 0x03,
         ConvertToModbusRTUCommand = 0x04,

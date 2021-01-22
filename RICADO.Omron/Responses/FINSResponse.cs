@@ -80,11 +80,11 @@ namespace RICADO.Omron.Responses
         {
             get
             {
-                return _responseData;
+                return _data;
             }
             private set
             {
-                _responseData = value;
+                _data = value;
             }
         }
 
