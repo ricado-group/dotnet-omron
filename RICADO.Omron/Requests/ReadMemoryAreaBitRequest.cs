@@ -71,7 +71,7 @@ namespace RICADO.Omron.Requests
 
         #region Constructor
 
-        private ReadMemoryAreaBitRequest() : base()
+        private ReadMemoryAreaBitRequest(OmronPLC plc) : base(plc)
         {
         }
 
@@ -82,10 +82,8 @@ namespace RICADO.Omron.Requests
 
         internal static ReadMemoryAreaBitRequest CreateNew(OmronPLC plc, ushort address, byte startBitIndex, ushort length, enMemoryBitDataType dataType)
         {
-            return new ReadMemoryAreaBitRequest()
+            return new ReadMemoryAreaBitRequest(plc)
             {
-                LocalNodeID = plc.LocalNodeID,
-                RemoteNodeID = plc.RemoteNodeID,
                 FunctionCode = (byte)enFunctionCode.MemoryArea,
                 SubFunctionCode = (byte)enMemoryAreaFunctionCode.Read,
                 Address = address,

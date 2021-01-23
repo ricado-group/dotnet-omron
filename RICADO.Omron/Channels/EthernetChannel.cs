@@ -13,6 +13,10 @@ namespace RICADO.Omron.Channels
         private string _remoteHost;
         private int _port;
 
+        private byte _requestId = 0;
+
+        private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+
         #endregion
 
 
@@ -61,9 +65,6 @@ namespace RICADO.Omron.Channels
         
         internal async Task<ProcessRequestResult> ProcessRequestAsync(FINSRequest request, int timeout, int retries, CancellationToken cancellationToken)
         {
-            // Build the Request into a Message we can Send
-            ReadOnlyMemory<byte> requestMessage = request.BuildMessage();
-
             int attempts = 0;
             Memory<byte> responseMessage = new Memory<byte>();
             int bytesSent = 0;
@@ -79,11 +80,16 @@ namespace RICADO.Omron.Channels
 
                 try
                 {
+                    await _semaphore.WaitAsync(cancellationToken);
+                    
                     if (attempts > 1)
                     {
                         await DestroyAndInitializeClient(timeout, cancellationToken);
                     }
-                    
+
+                    // Build the Request into a Message we can Send
+                    ReadOnlyMemory<byte> requestMessage = request.BuildMessage(getNextRequestId());
+
                     // Send the Message
                     SendMessageResult sendResult = await SendMessageAsync(requestMessage, timeout, cancellationToken);
 
@@ -106,17 +112,28 @@ namespace RICADO.Omron.Channels
                         throw;
                     }
                 }
+                finally
+                {
+                    _semaphore.Release();
+                }
             }
 
-            return new ProcessRequestResult
+            try
             {
-                BytesSent = bytesSent,
-                PacketsSent = packetsSent,
-                BytesReceived = bytesReceived,
-                PacketsReceived = packetsReceived,
-                Duration = DateTime.Now.Subtract(startTimestamp).TotalMilliseconds,
-                Response = FINSResponse.CreateNew(responseMessage, request),
-            };
+                return new ProcessRequestResult
+                {
+                    BytesSent = bytesSent,
+                    PacketsSent = packetsSent,
+                    BytesReceived = bytesReceived,
+                    PacketsReceived = packetsReceived,
+                    Duration = DateTime.Now.Subtract(startTimestamp).TotalMilliseconds,
+                    Response = FINSResponse.CreateNew(responseMessage, request),
+                };
+            }
+            catch (FINSException e)
+            {
+                throw new OmronException("Received a FINS Error Response from Omron PLC '" + _remoteHost + ":" + _port + "'", e);
+            }
         }
 
         #endregion
@@ -129,6 +146,25 @@ namespace RICADO.Omron.Channels
         protected abstract Task<SendMessageResult> SendMessageAsync(ReadOnlyMemory<byte> message, int timeout, CancellationToken cancellationToken);
 
         protected abstract Task<ReceiveMessageResult> ReceiveMessageAsync(int timeout, CancellationToken cancellationToken);
+
+        #endregion
+
+
+        #region Private Methods
+
+        private byte getNextRequestId()
+        {
+            if (_requestId == byte.MaxValue)
+            {
+                _requestId = byte.MinValue;
+            }
+            else
+            {
+                _requestId++;
+            }
+
+            return _requestId;
+        }
 
         #endregion
     }

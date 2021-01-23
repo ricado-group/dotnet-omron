@@ -9,7 +9,7 @@ namespace RICADO.Omron.Responses
 
         internal static void Validate(WriteMemoryAreaWordRequest request, FINSResponse response)
         {
-            // TODO: Review the Main and Sub Response Codes and handle them accordingly
+            // TODO: Consider if any Checks can be made on the FINS Response
         }
 
         #endregion

@@ -58,7 +58,7 @@ namespace RICADO.Omron.Requests
 
         #region Constructor
 
-        private WriteMemoryAreaWordRequest() : base()
+        private WriteMemoryAreaWordRequest(OmronPLC plc) : base(plc)
         {
         }
 
@@ -69,10 +69,8 @@ namespace RICADO.Omron.Requests
 
         internal static WriteMemoryAreaWordRequest CreateNew(OmronPLC plc, ushort startAddress, enMemoryWordDataType dataType, short[] values)
         {
-            return new WriteMemoryAreaWordRequest()
+            return new WriteMemoryAreaWordRequest(plc)
             {
-                LocalNodeID = plc.LocalNodeID,
-                RemoteNodeID = plc.RemoteNodeID,
                 FunctionCode = (byte)enFunctionCode.MemoryArea,
                 SubFunctionCode = (byte)enMemoryAreaFunctionCode.Write,
                 StartAddress = startAddress,

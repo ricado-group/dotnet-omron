@@ -11,8 +11,6 @@ namespace RICADO.Omron.Responses
 
         internal static short[] ExtractValues(ReadMemoryAreaWordRequest request, FINSResponse response)
         {
-            // TODO: Review the Main and Sub Response Codes and handle them accordingly
-
             if (response.Data.Length < request.Length * 2)
             {
                 throw new FINSException("The Response Data Length of '" + response.Data.Length.ToString() + "' was too short - Expecting a Length of '" + (request.Length * 2).ToString() + "'");

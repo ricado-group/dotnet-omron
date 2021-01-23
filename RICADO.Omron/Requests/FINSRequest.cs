@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using RICADO.Omron.Channels;
 
 namespace RICADO.Omron.Requests
 {
@@ -18,6 +19,8 @@ namespace RICADO.Omron.Requests
         private byte _localNodeId;
         private byte _remoteNodeId;
 
+        private byte _serviceId;
+
         private byte _functionCode;
         private byte _subFunctionCode;
 
@@ -26,29 +29,11 @@ namespace RICADO.Omron.Requests
 
         #region Internal Properties
 
-        internal byte LocalNodeID
-        {
-            get
-            {
-                return _localNodeId;
-            }
-            set
-            {
-                _localNodeId = value;
-            }
-        }
+        internal byte LocalNodeID => _localNodeId;
 
-        internal byte RemoteNodeID
-        {
-            get
-            {
-                return _remoteNodeId;
-            }
-            set
-            {
-                _remoteNodeId = value;
-            }
-        }
+        internal byte RemoteNodeID => _remoteNodeId;
+
+        internal byte ServiceID => _serviceId;
 
         internal byte FunctionCode
         {
@@ -79,8 +64,18 @@ namespace RICADO.Omron.Requests
 
         #region Constructors
 
-        protected FINSRequest()
+        protected FINSRequest(OmronPLC plc)
         {
+            if(plc.Channel is EthernetTCPChannel)
+            {
+                _localNodeId = (plc.Channel as EthernetTCPChannel).LocalNodeID;
+                _remoteNodeId = (plc.Channel as EthernetTCPChannel).RemoteNodeID;
+            }
+            else
+            {
+                _localNodeId = plc.LocalNodeID;
+                _remoteNodeId = plc.RemoteNodeID;
+            }
         }
 
         #endregion
@@ -88,8 +83,10 @@ namespace RICADO.Omron.Requests
 
         #region Internal Methods
 
-        internal ReadOnlyMemory<byte> BuildMessage()
+        internal ReadOnlyMemory<byte> BuildMessage(byte requestId)
         {
+            _serviceId = requestId;
+            
             List<byte> message = new List<byte>();
 
             /**
@@ -127,7 +124,7 @@ namespace RICADO.Omron.Requests
             message.Add(0);
 
             // Service ID
-            message.Add(0);
+            message.Add(_serviceId);
 
 
             /**

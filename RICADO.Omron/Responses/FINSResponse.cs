@@ -16,6 +16,8 @@ namespace RICADO.Omron.Responses
 
         #region Private Properties
 
+        private byte _serviceId;
+
         private byte _functionCode;
         private byte _subFunctionCode;
         private byte _mainResponseCode;
@@ -26,7 +28,19 @@ namespace RICADO.Omron.Responses
         #endregion
 
 
-        #region Public Properties
+        #region Internal Properties
+
+        internal byte ServiceID
+        {
+            get
+            {
+                return _serviceId;
+            }
+            set
+            {
+                _serviceId = value;
+            }
+        }
 
         internal byte FunctionCode
         {
@@ -111,6 +125,10 @@ namespace RICADO.Omron.Responses
 
             FINSResponse response = new FINSResponse();
 
+            byte[] header = message.Slice(0, HEADER_LENGTH).ToArray();
+
+            response.ServiceID = header[9];
+
             byte[] command = message.Slice(HEADER_LENGTH, COMMAND_LENGTH).ToArray();
 
             if(ValidateFunctionCode(command[0]) == false)
@@ -150,10 +168,19 @@ namespace RICADO.Omron.Responses
                     // Ignore Non-Fatal CPU Unit Errors
                     // NOTE: Bit #6 being on means that a Non-Fatal CPU Unit Error has occurred (e.g. Battery Error)
                 }
+                else if(response.MainResponseCode == 17 && response.SubResponseCode == 11)
+                {
+                    throw new FINSException("The Response Block is longer than the Max Length");
+                }
                 else
                 {
                     throw new FINSException("Received Main Response Code '" + response.MainResponseCode + "' and Sub Response Code '" + response.SubResponseCode + "' from the PLC");
                 }
+            }
+
+            if(request.ServiceID != response.ServiceID)
+            {
+                throw new FINSException("The Service ID for the FINS Request '" + request.ServiceID + "' did not match the FINS Response '" + response.ServiceID + "'");
             }
 
             response.Data = message.Length > HEADER_LENGTH + COMMAND_LENGTH + RESPONSE_CODE_LENGTH ? message.Slice(HEADER_LENGTH + COMMAND_LENGTH + RESPONSE_CODE_LENGTH, message.Length - (HEADER_LENGTH + COMMAND_LENGTH + RESPONSE_CODE_LENGTH)).ToArray() : new byte[0];

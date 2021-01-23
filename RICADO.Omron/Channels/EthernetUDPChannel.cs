@@ -30,17 +30,18 @@ namespace RICADO.Omron.Channels
 
         public override void Dispose()
         {
+            if(_client == null)
+            {
+                return;
+            }
+
             try
             {
-                if (_client != null)
-                {
-                    _client.Dispose();
-                }
-
-                _client = null;
+                _client.Dispose();
             }
-            catch
+            finally
             {
+                _client = null;
             }
         }
 
@@ -64,15 +65,11 @@ namespace RICADO.Omron.Channels
         {
             try
             {
-                if(_client != null)
-                {
-                    _client.Dispose();
-                }
-
-                _client = null;
+                _client?.Dispose();
             }
-            catch
+            finally
             {
+                _client = null;
             }
 
             try
@@ -140,10 +137,10 @@ namespace RICADO.Omron.Channels
                         if(receivedBytes > 0)
                         {
                             receivedData.AddRange(buffer.Slice(0, receivedBytes).ToArray());
-                        }
 
-                        result.Bytes += receivedBytes;
-                        result.Packets += 1;
+                            result.Bytes += receivedBytes;
+                            result.Packets += 1;
+                        }
                     }
                 }
 
