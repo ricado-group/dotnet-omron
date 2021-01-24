@@ -14,9 +14,14 @@ namespace RICADO.Omron
     
     public enum enPLCType
     {
+        NJ101,
+        NJ301,
+        NJ501,
         NX1P2,
         NX102,
-        NJ101,
+        NX701,
+        NY512,
+        NY532,
         NJ_NX_NY_Series,
         CJ2,
         CP1,

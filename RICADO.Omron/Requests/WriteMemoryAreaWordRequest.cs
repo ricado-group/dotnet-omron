@@ -98,7 +98,7 @@ namespace RICADO.Omron.Requests
             data.Add(0);
 
             // Length
-            data.AddRange(BitConverter.GetBytes(_values.Length).Reverse());
+            data.AddRange(BitConverter.GetBytes((ushort)_values.Length).Reverse());
 
             // Word Values
             foreach(short value in _values)

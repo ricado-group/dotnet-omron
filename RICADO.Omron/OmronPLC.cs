@@ -40,15 +40,20 @@ namespace RICADO.Omron
 
         internal EthernetChannel Channel => _channel;
 
-        internal int MaximumReadWordLength => 999; // TODO: Test multiple PLC Types for their Limitations
+        internal int MaximumReadWordLength => _plcType == enPLCType.CP1 ? 499 : 999;
 
-        internal int MaximumWriteWordLength => 996; // TODO: Test multiple PLC Types for their Limitations
+        internal int MaximumWriteWordLength => _plcType == enPLCType.CP1 ? 496 : 996;
 
         internal bool IsNSeries => _plcType switch
         {
+            enPLCType.NJ101 => true,
+            enPLCType.NJ301 => true,
+            enPLCType.NJ501 => true,
             enPLCType.NX1P2 => true,
             enPLCType.NX102 => true,
-            enPLCType.NJ101 => true,
+            enPLCType.NX701 => true,
+            enPLCType.NY512 => true,
+            enPLCType.NY532 => true,
             enPLCType.NJ_NX_NY_Series => true,
             _ => false,
         };
@@ -377,12 +382,12 @@ namespace RICADO.Omron
             };
         }
 
-        public Task<WriteBitsResult> WriteWord(short value, ushort address, enMemoryWordDataType dataType, CancellationToken cancellationToken)
+        public Task<WriteWordsResult> WriteWord(short value, ushort address, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
             return WriteWords(new short[] { value }, address, dataType, cancellationToken);
         }
 
-        public async Task<WriteBitsResult> WriteWords(short[] values, ushort startAddress, enMemoryWordDataType dataType, CancellationToken cancellationToken)
+        public async Task<WriteWordsResult> WriteWords(short[] values, ushort startAddress, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
             if (values.Length == 0)
             {
@@ -410,7 +415,7 @@ namespace RICADO.Omron
 
             WriteMemoryAreaWordResponse.Validate(request, requestResult.Response);
 
-            return new WriteBitsResult
+            return new WriteWordsResult
             {
                 BytesSent = requestResult.BytesSent,
                 PacketsSent = requestResult.PacketsSent,
@@ -420,16 +425,98 @@ namespace RICADO.Omron
             };
         }
 
-        // Refer: W227E12_FINS_Commands_Reference_Manual.pdf
+        public async Task<ReadClockResult> ReadClock(CancellationToken cancellationToken)
+        {
+            ReadClockRequest request = ReadClockRequest.CreateNew(this);
 
-        // TODO: Support Reading and Writing the Controller Clock (RTC)
-        // Command 07 and Sub Code 01 - Read
-        // Command 07 and Sub Code 02 - Write
-        // Pages 36 / 37
+            ProcessRequestResult requestResult = await _channel.ProcessRequestAsync(request, _timeout, _retries, cancellationToken);
 
-        // TODO: Support Reading the Controller Cycle Time
-        // Command 06 and Sub Code 20
-        // Pages 35 / 36
+            ReadClockResponse.ClockResult result = ReadClockResponse.ExtractClock(request, requestResult.Response);
+
+            return new ReadClockResult
+            {
+                BytesSent = requestResult.BytesSent,
+                PacketsSent = requestResult.PacketsSent,
+                BytesReceived = requestResult.BytesReceived,
+                PacketsReceived = requestResult.PacketsReceived,
+                Duration = requestResult.Duration,
+                Clock = result.ClockDateTime,
+                DayOfWeek = result.DayOfWeek
+            };
+        }
+
+        public Task<WriteClockResult> WriteClock(DateTime newDateTime, CancellationToken cancellationToken)
+        {
+            return WriteClock(newDateTime, (int)newDateTime.DayOfWeek, cancellationToken);
+        }
+
+        public async Task<WriteClockResult> WriteClock(DateTime newDateTime, int newDayOfWeek, CancellationToken cancellationToken)
+        {
+            DateTime minDateTime = new DateTime(1998, 1, 1, 0, 0, 0);
+
+            if (newDateTime < minDateTime)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newDateTime), "The Date Time Value cannot be less than '" + minDateTime.ToString() + "'");
+            }
+
+            DateTime maxDateTime = new DateTime(2069, 12, 31, 23, 59, 59);
+
+            if (newDateTime > maxDateTime)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newDateTime), "The Date Time Value cannot be greater than '" + maxDateTime.ToString() + "'");
+            }
+
+            if(newDayOfWeek < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newDayOfWeek), "The Day of Week Value cannot be less than 0");
+            }
+
+            if(newDayOfWeek > 6)
+            {
+                throw new ArgumentOutOfRangeException(nameof(newDayOfWeek), "The Day of Week Value cannot be greater than 6");
+            }
+            
+            WriteClockRequest request = WriteClockRequest.CreateNew(this, newDateTime, (byte)newDayOfWeek);
+
+            ProcessRequestResult requestResult = await _channel.ProcessRequestAsync(request, _timeout, _retries, cancellationToken);
+
+            WriteClockResponse.Validate(request, requestResult.Response);
+
+            return new WriteClockResult
+            {
+                BytesSent = requestResult.BytesSent,
+                PacketsSent = requestResult.PacketsSent,
+                BytesReceived = requestResult.BytesReceived,
+                PacketsReceived = requestResult.PacketsReceived,
+                Duration = requestResult.Duration,
+            };
+        }
+
+        public async Task<ReadCycleTimeResult> ReadCycleTime(CancellationToken cancellationToken)
+        {
+            if(IsNSeries == true && _plcType != enPLCType.NJ101 && _plcType != enPLCType.NJ301 && _plcType != enPLCType.NJ501)
+            {
+                throw new OmronException("Read Cycle Time is not Supported on the NX/NY Series PLC");
+            }
+
+            ReadCycleTimeRequest request = ReadCycleTimeRequest.CreateNew(this);
+
+            ProcessRequestResult requestResult = await _channel.ProcessRequestAsync(request, _timeout, _retries, cancellationToken);
+
+            ReadCycleTimeResponse.CycleTimeResult result = ReadCycleTimeResponse.ExtractCycleTime(request, requestResult.Response);
+
+            return new ReadCycleTimeResult
+            {
+                BytesSent = requestResult.BytesSent,
+                PacketsSent = requestResult.PacketsSent,
+                BytesReceived = requestResult.BytesReceived,
+                PacketsReceived = requestResult.PacketsReceived,
+                Duration = requestResult.Duration,
+                MinimumCycleTime = result.MinimumCycleTime,
+                MaximumCycleTime = result.MaximumCycleTime,
+                AverageCycleTime = result.AverageCycleTime,
+            };
+        }
 
         #endregion
 
@@ -500,17 +587,29 @@ namespace RICADO.Omron
             {
                 _controllerModel = result.ControllerModel;
 
-                if(_controllerModel.StartsWith("NX102"))
-                {
-                    _plcType = enPLCType.NX102;
-                }
-                else if(_controllerModel.StartsWith("NJ101"))
+                if (_controllerModel.StartsWith("NJ101"))
                 {
                     _plcType = enPLCType.NJ101;
                 }
-                else if(_controllerModel.StartsWith("NX1P2"))
+                else if (_controllerModel.StartsWith("NJ301"))
+                {
+                    _plcType = enPLCType.NJ301;
+                }
+                else if (_controllerModel.StartsWith("NJ501"))
+                {
+                    _plcType = enPLCType.NJ501;
+                }
+                else if (_controllerModel.StartsWith("NX1P2"))
                 {
                     _plcType = enPLCType.NX1P2;
+                }
+                else if (_controllerModel.StartsWith("NX102"))
+                {
+                    _plcType = enPLCType.NX102;
+                }
+                else if (_controllerModel.StartsWith("NX701"))
+                {
+                    _plcType = enPLCType.NX701;
                 }
                 else if(_controllerModel.StartsWith("NJ") || _controllerModel.StartsWith("NX") || _controllerModel.StartsWith("NY"))
                 {

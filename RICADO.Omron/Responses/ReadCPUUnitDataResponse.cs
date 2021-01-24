@@ -29,23 +29,44 @@ namespace RICADO.Omron.Responses
                 throw new FINSException("The Response Data Length of '" + response.Data.Length.ToString() + "' was too short - Expecting a Length of '" + expectedLength.ToString() + "'");
             }
 
-            List<byte> data = response.Data.ToList();
+            ReadOnlyMemory<byte> data = response.Data;
 
             CPUUnitDataResult result = new CPUUnitDataResult();
 
-            result.ControllerModel = ASCIIEncoding.ASCII.GetString(data.GetRange(0, CONTROLLER_MODEL_LENGTH).ToArray()).Trim();
+            result.ControllerModel = extractStringValue(data.Slice(0, CONTROLLER_MODEL_LENGTH).ToArray());
 
-            data.RemoveRange(0, CONTROLLER_MODEL_LENGTH);
-
-            result.ControllerVersion = ASCIIEncoding.ASCII.GetString(data.GetRange(0, CONTROLLER_VERSION_LENGTH).ToArray()).Trim();
-
-            data.RemoveRange(0, CONTROLLER_VERSION_LENGTH);
-
-            data.RemoveRange(0, SYSTEM_RESERVED_LENGTH);
-
-            result.DataMemoryWordCount = BitConverter.ToUInt16(new byte[] { data[4], data[3] });
+            result.ControllerVersion = extractStringValue(data.Slice(CONTROLLER_MODEL_LENGTH, CONTROLLER_VERSION_LENGTH).ToArray());
 
             return result;
+        }
+
+        #endregion
+
+
+        #region Private Methods
+
+        private static string extractStringValue(byte[] bytes)
+        {
+            List<byte> stringBytes = new List<byte>(bytes.Length);
+
+            foreach(byte byteValue in bytes)
+            {
+                if(byteValue > 0)
+                {
+                    stringBytes.Add(byteValue);
+                }
+                else
+                {
+                    break;
+                }
+            }
+            
+            if(stringBytes.Count == 0)
+            {
+                return "";
+            }
+
+            return ASCIIEncoding.ASCII.GetString(stringBytes.ToArray()).Trim();
         }
 
         #endregion
@@ -57,7 +78,6 @@ namespace RICADO.Omron.Responses
         {
             internal string ControllerModel;
             internal string ControllerVersion;
-            internal ushort DataMemoryWordCount;
         }
 
         #endregion
