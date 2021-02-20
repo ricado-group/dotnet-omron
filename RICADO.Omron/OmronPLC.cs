@@ -334,12 +334,12 @@ namespace RICADO.Omron
             };
         }
 
-        public Task<WriteBitsResult> WriteBit(bool value, ushort address, byte bitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
+        public Task<WriteBitsResult> WriteBitAsync(bool value, ushort address, byte bitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
         {
             return WriteBits(new bool[] { value }, address, bitIndex, dataType, cancellationToken);
         }
 
-        public async Task<WriteBitsResult> WriteBits(bool[] values, ushort address, byte startBitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
+        public async Task<WriteBitsResult> WriteBitsAsync(bool[] values, ushort address, byte startBitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
         {
             if(startBitIndex > 15)
             {
@@ -382,12 +382,12 @@ namespace RICADO.Omron
             };
         }
 
-        public Task<WriteWordsResult> WriteWord(short value, ushort address, enMemoryWordDataType dataType, CancellationToken cancellationToken)
+        public Task<WriteWordsResult> WriteWordAsync(short value, ushort address, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
             return WriteWords(new short[] { value }, address, dataType, cancellationToken);
         }
 
-        public async Task<WriteWordsResult> WriteWords(short[] values, ushort startAddress, enMemoryWordDataType dataType, CancellationToken cancellationToken)
+        public async Task<WriteWordsResult> WriteWordsAsync(short[] values, ushort startAddress, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
             if (values.Length == 0)
             {
@@ -425,7 +425,7 @@ namespace RICADO.Omron
             };
         }
 
-        public async Task<ReadClockResult> ReadClock(CancellationToken cancellationToken)
+        public async Task<ReadClockResult> ReadClockAsync(CancellationToken cancellationToken)
         {
             ReadClockRequest request = ReadClockRequest.CreateNew(this);
 
@@ -445,12 +445,12 @@ namespace RICADO.Omron
             };
         }
 
-        public Task<WriteClockResult> WriteClock(DateTime newDateTime, CancellationToken cancellationToken)
+        public Task<WriteClockResult> WriteClockAsync(DateTime newDateTime, CancellationToken cancellationToken)
         {
             return WriteClock(newDateTime, (int)newDateTime.DayOfWeek, cancellationToken);
         }
 
-        public async Task<WriteClockResult> WriteClock(DateTime newDateTime, int newDayOfWeek, CancellationToken cancellationToken)
+        public async Task<WriteClockResult> WriteClockAsync(DateTime newDateTime, int newDayOfWeek, CancellationToken cancellationToken)
         {
             DateTime minDateTime = new DateTime(1998, 1, 1, 0, 0, 0);
 
@@ -492,7 +492,7 @@ namespace RICADO.Omron
             };
         }
 
-        public async Task<ReadCycleTimeResult> ReadCycleTime(CancellationToken cancellationToken)
+        public async Task<ReadCycleTimeResult> ReadCycleTimeAsync(CancellationToken cancellationToken)
         {
             if(IsNSeries == true && _plcType != enPLCType.NJ101 && _plcType != enPLCType.NJ301 && _plcType != enPLCType.NJ501)
             {

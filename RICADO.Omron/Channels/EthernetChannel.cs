@@ -75,14 +75,11 @@ namespace RICADO.Omron.Channels
 
             while (attempts <= retries)
             {
-                // Increment the Attempts
-                attempts++;
-
                 try
                 {
                     await _semaphore.WaitAsync(cancellationToken);
                     
-                    if (attempts > 1)
+                    if (attempts > 0)
                     {
                         await DestroyAndInitializeClient(timeout, cancellationToken);
                     }
@@ -116,6 +113,9 @@ namespace RICADO.Omron.Channels
                 {
                     _semaphore.Release();
                 }
+
+                // Increment the Attempts
+                attempts++;
             }
 
             try
