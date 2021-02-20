@@ -109,9 +109,9 @@ namespace RICADO.Omron
 
         public string ControllerVersion => _controllerVersion;
 
-        public int MaximumReadWordLength => _plcType == enPLCType.CP1 ? 499 : 999;
+        public ushort MaximumReadWordLength => _plcType == enPLCType.CP1 ? 499 : 999;
 
-        public int MaximumWriteWordLength => _plcType == enPLCType.CP1 ? 496 : 996;
+        public ushort MaximumWriteWordLength => _plcType == enPLCType.CP1 ? 496 : 996;
 
         #endregion
 
