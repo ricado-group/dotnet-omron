@@ -336,7 +336,7 @@ namespace RICADO.Omron
 
         public Task<WriteBitsResult> WriteBitAsync(bool value, ushort address, byte bitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
         {
-            return WriteBits(new bool[] { value }, address, bitIndex, dataType, cancellationToken);
+            return WriteBitsAsync(new bool[] { value }, address, bitIndex, dataType, cancellationToken);
         }
 
         public async Task<WriteBitsResult> WriteBitsAsync(bool[] values, ushort address, byte startBitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
@@ -384,7 +384,7 @@ namespace RICADO.Omron
 
         public Task<WriteWordsResult> WriteWordAsync(short value, ushort address, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
-            return WriteWords(new short[] { value }, address, dataType, cancellationToken);
+            return WriteWordsAsync(new short[] { value }, address, dataType, cancellationToken);
         }
 
         public async Task<WriteWordsResult> WriteWordsAsync(short[] values, ushort startAddress, enMemoryWordDataType dataType, CancellationToken cancellationToken)
@@ -447,7 +447,7 @@ namespace RICADO.Omron
 
         public Task<WriteClockResult> WriteClockAsync(DateTime newDateTime, CancellationToken cancellationToken)
         {
-            return WriteClock(newDateTime, (int)newDateTime.DayOfWeek, cancellationToken);
+            return WriteClockAsync(newDateTime, (int)newDateTime.DayOfWeek, cancellationToken);
         }
 
         public async Task<WriteClockResult> WriteClockAsync(DateTime newDateTime, int newDayOfWeek, CancellationToken cancellationToken)
