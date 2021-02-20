@@ -40,10 +40,6 @@ namespace RICADO.Omron
 
         internal EthernetChannel Channel => _channel;
 
-        internal int MaximumReadWordLength => _plcType == enPLCType.CP1 ? 499 : 999;
-
-        internal int MaximumWriteWordLength => _plcType == enPLCType.CP1 ? 496 : 996;
-
         internal bool IsNSeries => _plcType switch
         {
             enPLCType.NJ101 => true,
@@ -112,6 +108,10 @@ namespace RICADO.Omron
         public string ControllerModel => _controllerModel;
 
         public string ControllerVersion => _controllerVersion;
+
+        public int MaximumReadWordLength => _plcType == enPLCType.CP1 ? 499 : 999;
+
+        public int MaximumWriteWordLength => _plcType == enPLCType.CP1 ? 496 : 996;
 
         #endregion
 

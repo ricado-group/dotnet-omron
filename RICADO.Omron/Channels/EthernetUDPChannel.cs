@@ -123,12 +123,12 @@ namespace RICADO.Omron.Channels
             try
             {
                 List<byte> receivedData = new List<byte>();
-                DateTime startTimestamp = DateTime.Now;
+                DateTime startTimestamp = DateTime.UtcNow;
 
-                while(DateTime.Now.Subtract(startTimestamp).TotalMilliseconds < timeout && receivedData.Count < FINSResponse.HEADER_LENGTH + FINSResponse.COMMAND_LENGTH + FINSResponse.RESPONSE_CODE_LENGTH)
+                while(DateTime.UtcNow.Subtract(startTimestamp).TotalMilliseconds < timeout && receivedData.Count < FINSResponse.HEADER_LENGTH + FINSResponse.COMMAND_LENGTH + FINSResponse.RESPONSE_CODE_LENGTH)
                 {
                     Memory<byte> buffer = new byte[4096];
-                    TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(timeout).Subtract(DateTime.Now.Subtract(startTimestamp));
+                    TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(timeout).Subtract(DateTime.UtcNow.Subtract(startTimestamp));
 
                     if (receiveTimeout.TotalMilliseconds >= 50)
                     {

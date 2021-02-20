@@ -71,7 +71,7 @@ namespace RICADO.Omron.Channels
             int packetsSent = 0;
             int bytesReceived = 0;
             int packetsReceived = 0;
-            DateTime startTimestamp = DateTime.Now;
+            DateTime startTimestamp = DateTime.UtcNow;
 
             while (attempts <= retries)
             {
@@ -126,7 +126,7 @@ namespace RICADO.Omron.Channels
                     PacketsSent = packetsSent,
                     BytesReceived = bytesReceived,
                     PacketsReceived = packetsReceived,
-                    Duration = DateTime.Now.Subtract(startTimestamp).TotalMilliseconds,
+                    Duration = DateTime.UtcNow.Subtract(startTimestamp).TotalMilliseconds,
                     Response = FINSResponse.CreateNew(responseMessage, request),
                 };
             }

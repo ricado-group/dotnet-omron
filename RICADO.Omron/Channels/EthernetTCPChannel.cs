@@ -216,12 +216,12 @@ namespace RICADO.Omron.Channels
             try
             {
                 List<byte> receivedData = new List<byte>();
-                DateTime startTimestamp = DateTime.Now;
+                DateTime startTimestamp = DateTime.UtcNow;
 
-                while (DateTime.Now.Subtract(startTimestamp).TotalMilliseconds < timeout && receivedData.Count < TCP_HEADER_LENGTH)
+                while (DateTime.UtcNow.Subtract(startTimestamp).TotalMilliseconds < timeout && receivedData.Count < TCP_HEADER_LENGTH)
                 {
                     Memory<byte> buffer = new byte[4096];
-                    TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(timeout).Subtract(DateTime.Now.Subtract(startTimestamp));
+                    TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(timeout).Subtract(DateTime.UtcNow.Subtract(startTimestamp));
 
                     if (receiveTimeout.TotalMilliseconds >= 50)
                     {
@@ -311,12 +311,12 @@ namespace RICADO.Omron.Channels
 
                 if (receivedData.Count < tcpMessageDataLength)
                 {
-                    startTimestamp = DateTime.Now;
+                    startTimestamp = DateTime.UtcNow;
 
-                    while (DateTime.Now.Subtract(startTimestamp).TotalMilliseconds < timeout && receivedData.Count < tcpMessageDataLength)
+                    while (DateTime.UtcNow.Subtract(startTimestamp).TotalMilliseconds < timeout && receivedData.Count < tcpMessageDataLength)
                     {
                         Memory<byte> buffer = new byte[4096];
-                        TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(timeout).Subtract(DateTime.Now.Subtract(startTimestamp));
+                        TimeSpan receiveTimeout = TimeSpan.FromMilliseconds(timeout).Subtract(DateTime.UtcNow.Subtract(startTimestamp));
 
                         if (receiveTimeout.TotalMilliseconds >= 50)
                         {
