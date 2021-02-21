@@ -15,7 +15,14 @@ namespace RICADO.Omron.Channels
 
         private byte _requestId = 0;
 
-        private SemaphoreSlim _semaphore = new SemaphoreSlim(1, 1);
+        private readonly SemaphoreSlim _semaphore;
+
+        #endregion
+
+
+        #region Protected Properties
+
+        protected SemaphoreSlim Semaphore => _semaphore;
 
         #endregion
 
@@ -47,6 +54,8 @@ namespace RICADO.Omron.Channels
         {
             _remoteHost = remoteHost;
             _port = port;
+            
+            _semaphore = new SemaphoreSlim(1, 1);
         }
 
         #endregion
@@ -54,7 +63,10 @@ namespace RICADO.Omron.Channels
 
         #region Public Methods
 
-        public abstract void Dispose();
+        public virtual void Dispose()
+        {
+            _semaphore?.Dispose();
+        }
 
         #endregion
 
@@ -77,7 +89,10 @@ namespace RICADO.Omron.Channels
             {
                 try
                 {
-                    await _semaphore.WaitAsync(cancellationToken);
+                    if (!_semaphore.Wait(0))
+                    {
+                        await _semaphore.WaitAsync(cancellationToken);
+                    }
                     
                     if (attempts > 0)
                     {
@@ -102,7 +117,7 @@ namespace RICADO.Omron.Channels
 
                     break;
                 }
-                catch (OmronException)
+                catch (Exception)
                 {
                     if(attempts >= retries)
                     {

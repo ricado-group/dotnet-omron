@@ -61,14 +61,12 @@ namespace RICADO.Omron.Channels
 
         public override void Dispose()
         {
-            if (_client == null)
-            {
-                return;
-            }
-
             try
             {
-                _client.Dispose();
+                _client?.Dispose();
+            }
+            catch
+            {
             }
             finally
             {
@@ -81,9 +79,23 @@ namespace RICADO.Omron.Channels
 
         #region Internal Methods
 
-        internal override Task InitializeAsync(int timeout, CancellationToken cancellationToken)
+        internal override async Task InitializeAsync(int timeout, CancellationToken cancellationToken)
         {
-            return initializeClient(timeout, cancellationToken);
+            try
+            {
+                if(!Semaphore.Wait(0))
+                {
+                    await Semaphore.WaitAsync(cancellationToken);
+                }
+
+                destroyClient();
+
+                await initializeClient(timeout, cancellationToken);
+            }
+            finally
+            {
+                Semaphore.Release();
+            }
         }
 
         #endregion
@@ -93,26 +105,23 @@ namespace RICADO.Omron.Channels
 
         protected override async Task DestroyAndInitializeClient(int timeout, CancellationToken cancellationToken)
         {
-            try
-            {
-                _client?.Dispose();
-            }
-            finally
-            {
-                _client = null;
-            }
+            destroyClient();
 
             try
             {
                 await initializeClient(timeout, cancellationToken);
             }
+            catch (ObjectDisposedException)
+            {
+                throw new OmronException("Failed to Re-Connect to Omron PLC '" + RemoteHost + ":" + Port + "' - The underlying Socket Connection was Closed");
+            }
             catch (TimeoutException)
             {
-                throw new OmronException("Failed to Re-Connect within the Timeout Period to Omron PLC '" + base.RemoteHost + ":" + base.Port + "'");
+                throw new OmronException("Failed to Re-Connect within the Timeout Period to Omron PLC '" + RemoteHost + ":" + Port + "'");
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new OmronException("Failed to Re-Connect to Omron PLC '" + base.RemoteHost + ":" + base.Port + "'", e);
+                throw new OmronException("Failed to Re-Connect to Omron PLC '" + RemoteHost + ":" + Port + "'", e);
             }
         }
 
@@ -133,12 +142,7 @@ namespace RICADO.Omron.Channels
 
         private async Task initializeClient(int timeout, CancellationToken cancellationToken)
         {
-            if (_client != null)
-            {
-                return;
-            }
-
-            _client = new TcpClient(base.RemoteHost, base.Port);
+            _client = new TcpClient(RemoteHost, Port);
 
             await _client.ConnectAsync(timeout, cancellationToken);
 
@@ -152,28 +156,40 @@ namespace RICADO.Omron.Channels
 
                 if(receiveResult.Message.Length < 8)
                 {
-                    throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - TCP Negotiation Message Length was too Short");
+                    throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + RemoteHost + ":" + Port + "' - TCP Negotiation Message Length was too Short");
                 }
 
                 byte[] tcpNegotiationMessage = receiveResult.Message.Slice(0, 8).ToArray();
 
                 if(tcpNegotiationMessage[3] == 0 || tcpNegotiationMessage[3] == 255)
                 {
-                    throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - TCP Negotiation Message contained an Invalid Local Node ID");
+                    throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + RemoteHost + ":" + Port + "' - TCP Negotiation Message contained an Invalid Local Node ID");
                 }
 
                 _localNodeId = tcpNegotiationMessage[3];
 
                 if (tcpNegotiationMessage[7] == 0 || tcpNegotiationMessage[7] == 255)
                 {
-                    throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - TCP Negotiation Message contained an Invalid Remote Node ID");
+                    throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + RemoteHost + ":" + Port + "' - TCP Negotiation Message contained an Invalid Remote Node ID");
                 }
 
                 _remoteNodeId = tcpNegotiationMessage[7];
             }
             catch (OmronException e)
             {
-                throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + base.RemoteHost + ":" + base.Port + "'", e);
+                throw new OmronException("Failed to Negotiate a TCP Connection with Omron PLC '" + RemoteHost + ":" + Port + "'", e);
+            }
+        }
+
+        private void destroyClient()
+        {
+            try
+            {
+                _client?.Dispose();
+            }
+            finally
+            {
+                _client = null;
             }
         }
 
@@ -192,13 +208,17 @@ namespace RICADO.Omron.Channels
                 result.Bytes += await _client.SendAsync(tcpMessage, timeout, cancellationToken);
                 result.Packets += 1;
             }
+            catch (ObjectDisposedException)
+            {
+                throw new OmronException("Failed to Send FINS Message to Omron PLC '" + RemoteHost + ":" + Port + "' - The underlying Socket Connection was Closed");
+            }
             catch (TimeoutException)
             {
-                throw new OmronException("Failed to Send FINS Message within the Timeout Period to Omron PLC '" + base.RemoteHost + ":" + base.Port + "'");
+                throw new OmronException("Failed to Send FINS Message within the Timeout Period to Omron PLC '" + RemoteHost + ":" + Port + "'");
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new OmronException("Failed to Send FINS Message to Omron PLC '" + base.RemoteHost + ":" + base.Port + "'", e);
+                throw new OmronException("Failed to Send FINS Message to Omron PLC '" + RemoteHost + ":" + Port + "'", e);
             }
 
             return result;
@@ -239,17 +259,17 @@ namespace RICADO.Omron.Channels
 
                 if (receivedData.Count == 0)
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - No Data was Received");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - No Data was Received");
                 }
 
                 if (receivedData.Count < TCP_HEADER_LENGTH)
                 {
-                    throw new OmronException("Failed to Receive FINS Message within the Timeout Period from Omron PLC '" + base.RemoteHost + ":" + base.Port + "'");
+                    throw new OmronException("Failed to Receive FINS Message within the Timeout Period from Omron PLC '" + RemoteHost + ":" + Port + "'");
                 }
 
                 if (receivedData[0] != 'F' || receivedData[1] != 'I' || receivedData[2] != 'N' || receivedData[3] != 'S')
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - The TCP Header was Invalid");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - The TCP Header was Invalid");
                 }
 
                 byte[] tcpHeader = receivedData.GetRange(0, TCP_HEADER_LENGTH).ToArray();
@@ -258,7 +278,7 @@ namespace RICADO.Omron.Channels
 
                 if(tcpMessageDataLength <= 0 || tcpMessageDataLength > short.MaxValue)
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - The TCP Message Length was Invalid");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - The TCP Message Length was Invalid");
                 }
 
                 if(receivedData[11] == 3 || receivedData[15] != 0)
@@ -266,45 +286,45 @@ namespace RICADO.Omron.Channels
                     switch(receivedData[15])
                     {
                         case 1:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: The FINS Identifier (ASCII Code) was Invalid.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: The FINS Identifier (ASCII Code) was Invalid.");
 
                         case 2:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: The Data Length is too Long.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: The Data Length is too Long.");
 
                         case 3:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: The Command is not Supported.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: The Command is not Supported.");
 
                         case 20:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: All Connections are in Use.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: All Connections are in Use.");
 
                         case 21:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: The Specified Node is already Connected.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: The Specified Node is already Connected.");
 
                         case 22:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: Attempt to Access a Protected Node from an Unspecified IP Address.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: Attempt to Access a Protected Node from an Unspecified IP Address.");
 
                         case 23:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: The Client FINS Node Address is out of Range.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: The Client FINS Node Address is out of Range.");
 
                         case 24:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: The same FINS Node Address is being used by the Client and Server.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: The same FINS Node Address is being used by the Client and Server.");
 
                         case 25:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: All the Node Addresses Available for Allocation have been Used.");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: All the Node Addresses Available for Allocation have been Used.");
 
                         default:
-                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - Omron TCP Error: Unknown Code '" + receivedData[15] + "'");
+                            throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - Omron TCP Error: Unknown Code '" + receivedData[15] + "'");
                     }
                 }
 
                 if(receivedData[8] != 0 || receivedData[9] != 0 || receivedData[10] != 0 || receivedData[11] != (byte)command)
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - The TCP Command Received '" + receivedData[11] + "' did not match Expected Command '" + (byte)command + "'");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - The TCP Command Received '" + receivedData[11] + "' did not match Expected Command '" + (byte)command + "'");
                 }
 
                 if(command == enTCPCommandCode.FINSFrame && tcpMessageDataLength < FINSResponse.HEADER_LENGTH + FINSResponse.COMMAND_LENGTH + FINSResponse.RESPONSE_CODE_LENGTH)
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - The TCP Message Length was too short for a FINS Frame");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - The TCP Message Length was too short for a FINS Frame");
                 }
 
                 receivedData.RemoveRange(0, TCP_HEADER_LENGTH);
@@ -335,28 +355,32 @@ namespace RICADO.Omron.Channels
 
                 if (receivedData.Count == 0)
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - No Data was Received after TCP Header");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - No Data was Received after TCP Header");
                 }
 
                 if (receivedData.Count < tcpMessageDataLength)
                 {
-                    throw new OmronException("Failed to Receive FINS Message within the Timeout Period from Omron PLC '" + base.RemoteHost + ":" + base.Port + "'");
+                    throw new OmronException("Failed to Receive FINS Message within the Timeout Period from Omron PLC '" + RemoteHost + ":" + Port + "'");
                 }
 
                 if (command == enTCPCommandCode.FINSFrame && receivedData[0] != 0xC0 && receivedData[0] != 0xC1)
                 {
-                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "' - The FINS Header was Invalid");
+                    throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - The FINS Header was Invalid");
                 }
 
                 result.Message = receivedData.ToArray();
             }
+            catch (ObjectDisposedException)
+            {
+                throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "' - The underlying Socket Connection was Closed");
+            }
             catch (TimeoutException)
             {
-                throw new OmronException("Failed to Receive FINS Message within the Timeout Period from Omron PLC '" + base.RemoteHost + ":" + base.Port + "'");
+                throw new OmronException("Failed to Receive FINS Message within the Timeout Period from Omron PLC '" + RemoteHost + ":" + Port + "'");
             }
             catch (System.Net.Sockets.SocketException e)
             {
-                throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + base.RemoteHost + ":" + base.Port + "'", e);
+                throw new OmronException("Failed to Receive FINS Message from Omron PLC '" + RemoteHost + ":" + Port + "'", e);
             }
 
             return result;

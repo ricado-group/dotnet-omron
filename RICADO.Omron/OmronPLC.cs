@@ -1,8 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
 using RICADO.Omron.Channels;
@@ -27,6 +23,7 @@ namespace RICADO.Omron
 
         private enPLCType _plcType = enPLCType.Unknown;
         private bool _isInitialized;
+        private readonly object _isInitializedLock = new object();
 
         private EthernetChannel _channel;
 
@@ -103,7 +100,16 @@ namespace RICADO.Omron
 
         public enPLCType PLCType => _plcType;
 
-        public bool IsInitialized => _isInitialized;
+        public bool IsInitialized
+        {
+            get
+            {
+                lock(_isInitializedLock)
+                {
+                    return _isInitialized;
+                }
+            }
+        }
 
         public string ControllerModel => _controllerModel;
 
@@ -192,9 +198,12 @@ namespace RICADO.Omron
 
         public async Task InitializeAsync(CancellationToken cancellationToken)
         {
-            if(_isInitialized == true)
+            lock (_isInitializedLock)
             {
-                return;
+                if (_isInitialized == true)
+                {
+                    return;
+                }
             }
 
             // Initialize the Channel
@@ -205,6 +214,14 @@ namespace RICADO.Omron
                     _channel = new EthernetUDPChannel(_remoteHost, _port);
 
                     await _channel.InitializeAsync(_timeout, cancellationToken);
+                }
+                catch (ObjectDisposedException)
+                {
+                    throw new OmronException("Failed to Create the Ethernet UDP Communication Channel for Omron PLC '" + _remoteHost + ":" + _port + "' - The underlying Socket Connection has been Closed");
+                }
+                catch (TimeoutException)
+                {
+                    throw new OmronException("Failed to Create the Ethernet UDP Communication Channel within the Timeout Period for Omron PLC '" + _remoteHost + ":" + _port + "'");
                 }
                 catch (System.Net.Sockets.SocketException e)
                 {
@@ -219,6 +236,14 @@ namespace RICADO.Omron
 
                     await _channel.InitializeAsync(_timeout, cancellationToken);
                 }
+                catch (ObjectDisposedException)
+                {
+                    throw new OmronException("Failed to Create the Ethernet TCP Communication Channel for Omron PLC '" + _remoteHost + ":" + _port + "' - The underlying Socket Connection has been Closed");
+                }
+                catch (TimeoutException)
+                {
+                    throw new OmronException("Failed to Create the Ethernet TCP Communication Channel within the Timeout Period for Omron PLC '" + _remoteHost + ":" + _port + "'");
+                }
                 catch (System.Net.Sockets.SocketException e)
                 {
                     throw new OmronException("Failed to Create the Ethernet TCP Communication Channel for Omron PLC '" + _remoteHost + ":" + _port + "'", e);
@@ -227,7 +252,10 @@ namespace RICADO.Omron
 
             await requestControllerInformation(cancellationToken);
 
-            _isInitialized = true;
+            lock(_isInitializedLock)
+            {
+                _isInitialized = true;
+            }
         }
 
         public void Dispose()
@@ -239,7 +267,7 @@ namespace RICADO.Omron
                 _channel = null;
             }
 
-            if (_isInitialized == true)
+            lock(_isInitializedLock)
             {
                 _isInitialized = false;
             }
@@ -252,6 +280,14 @@ namespace RICADO.Omron
 
         public async Task<ReadBitsResult> ReadBitsAsync(ushort address, byte startBitIndex, byte length, enMemoryBitDataType dataType, CancellationToken cancellationToken)
         {
+            lock(_isInitializedLock)
+            {
+                if(_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+            
             if (startBitIndex > 15)
             {
                 throw new ArgumentOutOfRangeException(nameof(startBitIndex), "The Start Bit Index cannot be greater than 15");
@@ -299,6 +335,14 @@ namespace RICADO.Omron
 
         public async Task<ReadWordsResult> ReadWordsAsync(ushort startAddress, ushort length, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
+            lock (_isInitializedLock)
+            {
+                if (_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+
             if (length == 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(length), "The Length cannot be Zero");
@@ -341,7 +385,15 @@ namespace RICADO.Omron
 
         public async Task<WriteBitsResult> WriteBitsAsync(bool[] values, ushort address, byte startBitIndex, enMemoryBitDataType dataType, CancellationToken cancellationToken)
         {
-            if(startBitIndex > 15)
+            lock (_isInitializedLock)
+            {
+                if (_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+
+            if (startBitIndex > 15)
             {
                 throw new ArgumentOutOfRangeException(nameof(startBitIndex), "The Start Bit Index cannot be greater than 15");
             }
@@ -389,6 +441,14 @@ namespace RICADO.Omron
 
         public async Task<WriteWordsResult> WriteWordsAsync(short[] values, ushort startAddress, enMemoryWordDataType dataType, CancellationToken cancellationToken)
         {
+            lock (_isInitializedLock)
+            {
+                if (_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+
             if (values.Length == 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(values), "The Values Array cannot be Empty");
@@ -427,6 +487,14 @@ namespace RICADO.Omron
 
         public async Task<ReadClockResult> ReadClockAsync(CancellationToken cancellationToken)
         {
+            lock (_isInitializedLock)
+            {
+                if (_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+
             ReadClockRequest request = ReadClockRequest.CreateNew(this);
 
             ProcessRequestResult requestResult = await _channel.ProcessRequestAsync(request, _timeout, _retries, cancellationToken);
@@ -452,6 +520,14 @@ namespace RICADO.Omron
 
         public async Task<WriteClockResult> WriteClockAsync(DateTime newDateTime, int newDayOfWeek, CancellationToken cancellationToken)
         {
+            lock (_isInitializedLock)
+            {
+                if (_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+
             DateTime minDateTime = new DateTime(1998, 1, 1, 0, 0, 0);
 
             if (newDateTime < minDateTime)
@@ -494,7 +570,15 @@ namespace RICADO.Omron
 
         public async Task<ReadCycleTimeResult> ReadCycleTimeAsync(CancellationToken cancellationToken)
         {
-            if(IsNSeries == true && _plcType != enPLCType.NJ101 && _plcType != enPLCType.NJ301 && _plcType != enPLCType.NJ501)
+            lock (_isInitializedLock)
+            {
+                if (_isInitialized == false)
+                {
+                    throw new OmronException("This Omron PLC must be Initialized first before any Requests can be Processed");
+                }
+            }
+
+            if (IsNSeries == true && _plcType != enPLCType.NJ101 && _plcType != enPLCType.NJ301 && _plcType != enPLCType.NJ501)
             {
                 throw new OmronException("Read Cycle Time is not Supported on the NX/NY Series PLC");
             }
