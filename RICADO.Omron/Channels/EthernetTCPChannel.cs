@@ -135,6 +135,40 @@ namespace RICADO.Omron.Channels
             return receiveMessageAsync(enTCPCommandCode.FINSFrame, timeout, cancellationToken);
         }
 
+        protected override async Task PurgeReceiveBuffer(int timeout, CancellationToken cancellationToken)
+        {
+            try
+            {
+                if (_client.Connected == false)
+                {
+                    return;
+                }
+
+                if(_client.Available == 0)
+                {
+                    await Task.Delay(timeout / 4);
+                }
+                
+                DateTime startTimestamp = DateTime.UtcNow;
+                Memory<byte> buffer = new byte[2000];
+
+                while (_client.Connected && _client.Available > 0 && DateTime.UtcNow.Subtract(startTimestamp).TotalMilliseconds < timeout)
+                {
+                    try
+                    {
+                        await _client.ReceiveAsync(buffer, timeout, cancellationToken);
+                    }
+                    catch
+                    {
+                        return;
+                    }
+                }
+            }
+            catch
+            {
+            }
+        }
+
         #endregion
 
 

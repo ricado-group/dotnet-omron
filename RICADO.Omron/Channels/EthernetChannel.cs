@@ -147,6 +147,26 @@ namespace RICADO.Omron.Channels
             }
             catch (FINSException e)
             {
+                if(e.Message.Contains("Service ID") && responseMessage.Length >= 9 && responseMessage.Span[9] != request.ServiceID)
+                {
+                    try
+                    {
+                        if (!_semaphore.Wait(0))
+                        {
+                            await _semaphore.WaitAsync(cancellationToken);
+                        }
+
+                        await PurgeReceiveBuffer(timeout, cancellationToken);
+                    }
+                    catch
+                    {
+                    }
+                    finally
+                    {
+                        _semaphore.Release();
+                    }
+                }
+
                 throw new OmronException("Received a FINS Error Response from Omron PLC '" + _remoteHost + ":" + _port + "'", e);
             }
         }
@@ -161,6 +181,8 @@ namespace RICADO.Omron.Channels
         protected abstract Task<SendMessageResult> SendMessageAsync(ReadOnlyMemory<byte> message, int timeout, CancellationToken cancellationToken);
 
         protected abstract Task<ReceiveMessageResult> ReceiveMessageAsync(int timeout, CancellationToken cancellationToken);
+
+        protected abstract Task PurgeReceiveBuffer(int timeout, CancellationToken cancellationToken);
 
         #endregion
 
