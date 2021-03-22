@@ -59,7 +59,15 @@ jobs:
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
         run: dotnet nuget push "${{ env.PROJECT_NAME }}/bin/Release/*.nupkg" -k ${{ secrets.NUGET_APIKEY }} -s "https://api.nuget.org/v3/index.json" --skip-duplicate
       
-      # Step 9 - Create New Release
+      # Step 9 - Generate the Changelog
+      - name: Generate the Changelog
+        id: changelog
+        if: ${{ startsWith(github.ref, 'refs/tags/') }}
+        uses: metcalfc/changelog-generator@v1.0.0
+        with:
+          myToken: ${{ secrets.GITHUB_TOKEN }}
+      
+      # Step 10 - Create New Release
       - name: Create New Release
         id: create-release
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
@@ -68,8 +76,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tag_name: ${{ env.CI_REF_NAME }}
-          release_name: ${{ env.PROJECT_NAME }} ${{ env.CI_REF_NAME }}
+          release_name: Version ${{ env.CI_REF_NAME }}
           body: |
-            ${{ env.PROJECT_NAME }} Version ${{ env.CI_REF_NAME }}
-            
-            Built Automatically with :heart: using GitHub Actions
+            ${{ steps.changelog.outputs.changelog }}
