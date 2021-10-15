@@ -25,7 +25,7 @@ jobs:
       
       # Step 2 - Extract Environment Variables
       - name: Extract Environment Variables
-        uses: FranzDiebold/github-env-vars-action@v2.1.0
+        uses: FranzDiebold/github-env-vars-action@v2.3.0
       
       # Step 3 - Setup .NET 5 with GitHub Packages Authentication
       - name: Setup .NET 5 with GitHub Packages Authentication
