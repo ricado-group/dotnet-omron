@@ -63,7 +63,7 @@ jobs:
       - name: Generate the Changelog
         id: changelog
         if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: metcalfc/changelog-generator@v1.0.0
+        uses: metcalfc/changelog-generator@v1.0.1
         with:
           myToken: ${{ secrets.GITHUB_TOKEN }}
       
