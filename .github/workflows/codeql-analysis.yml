@@ -1,5 +1,9 @@
 name: "CodeQL"
 
+# Environment Variables
+env:
+  PROJECT_NAME: "RICADO.Omron"
+
 on:
   push:
     branches: [ master ]
@@ -23,16 +27,33 @@ jobs:
         language: [ 'csharp' ]
 
     steps:
-    - name: Checkout repository
+    # Step 1 - Checkout Code
+    - name: Checkout Code
       uses: actions/checkout@v2
-
+    
+    # Step 2 - Initialize CodeQL
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
         languages: ${{ matrix.language }}
 
-    - name: Autobuild
-      uses: github/codeql-action/autobuild@v1
-
+    # Step 3 - Setup .NET 5 with GitHub Packages Authentication
+    - name: Setup .NET 5 with GitHub Packages Authentication
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '5.0.100'
+        source-url: https://nuget.pkg.github.com/ricado-group/index.json
+      env:
+        NUGET_AUTH_TOKEN: ${{ secrets.GH_ACTIONS_PAT }}
+    
+    # Step 4 - Restore NuGet Packages
+    - name: Restore NuGet Packages
+      run: dotnet restore "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj"
+    
+    # Step 5 - Build the Library
+    - name: Build the Library
+      run: dotnet build "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj" -c Release
+    
+    # Step 6 - Perform CodeQL Analysis
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
