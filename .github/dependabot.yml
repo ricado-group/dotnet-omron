@@ -1,5 +1,8 @@
 version: 2
 registries:
+  nuget-default:
+    type: nuget-feed
+    url: https://api.nuget.org/v3/index.json
   nuget-github:
     type: nuget-feed
     url: https://nuget.pkg.github.com/ricado-group/index.json
@@ -17,6 +20,7 @@ updates:
   - package-ecosystem: "nuget"
     directory: "/"
     registries:
+      - nuget-default
       - nuget-github
     schedule:
       interval: "daily"
