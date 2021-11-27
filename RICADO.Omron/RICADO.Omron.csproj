@@ -26,7 +26,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="RICADO.Sockets" Version="1.0.2" />
+    <PackageReference Include="RICADO.Sockets" Version="1.1.0" />
   </ItemGroup>
 
 </Project>
