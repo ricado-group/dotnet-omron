@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>net6.0</TargetFramework>
     <Authors>RICADO Group</Authors>
     <Company>RICADO Group LP</Company>
-    <Description>An Omron PLC Communication Library for .NET 5 Applications</Description>
+    <Description>An Omron PLC Communication Library for .NET 6 Applications</Description>
     <Copyright>Copyright © RICADO Group LP 2009 - 2021</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageIcon>packageIcon.png</PackageIcon>

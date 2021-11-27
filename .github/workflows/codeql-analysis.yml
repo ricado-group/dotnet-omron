@@ -1,60 +1,48 @@
+# Action Name
 name: "CodeQL"
 
-# Environment Variables
-env:
-  PROJECT_NAME: "RICADO.Omron"
-
+# When the Action will Run
 on:
-  push:
-    branches: [ master ]
-  pull_request:
-    branches: [ master ]
   schedule:
-    - cron: '15 18 * * 0'
+    - cron: '0 7 * * 5'
 
+# Workflow Jobs
 jobs:
+  # Analyze Job
   analyze:
-    if: github.actor != 'dependabot[bot]'
     name: Analyze
     runs-on: ubuntu-latest
+
     permissions:
       actions: read
       contents: read
       security-events: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        language: [ 'csharp' ]
-
     steps:
-    # Step 1 - Checkout Code
-    - name: Checkout Code
-      uses: actions/checkout@v2
-    
-    # Step 2 - Initialize CodeQL
-    - name: Initialize CodeQL
-      uses: github/codeql-action/init@v1
-      with:
-        languages: ${{ matrix.language }}
-
-    # Step 3 - Setup .NET 5 with GitHub Packages Authentication
-    - name: Setup .NET 5 with GitHub Packages Authentication
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: '5.0.100'
-        source-url: https://nuget.pkg.github.com/ricado-group/index.json
-      env:
-        NUGET_AUTH_TOKEN: ${{ secrets.GH_ACTIONS_PAT }}
-    
-    # Step 4 - Restore NuGet Packages
-    - name: Restore NuGet Packages
-      run: dotnet restore "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj"
-    
-    # Step 5 - Build the Library
-    - name: Build the Library
-      run: dotnet build "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj" -c Release
-    
-    # Step 6 - Perform CodeQL Analysis
-    - name: Perform CodeQL Analysis
-      uses: github/codeql-action/analyze@v1
+      # Step 1 - Checkout Code
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      # Step 2 - Initialize CodeQL
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v1
+        with:
+          languages: csharp
+          queries: security-and-quality
+      
+      # Step 3 - Setup .NET 6 with GitHub Packages Authentication
+      - name: Setup .NET 6 with GitHub Packages Authentication
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 6.0.x
+          source-url: https://nuget.pkg.github.com/ricado-group/index.json
+        env:
+          NUGET_AUTH_TOKEN: ${{ secrets.GH_ACTIONS_PAT }}
+      
+      # Step 4 - Build the Library
+      - name: Run CodeQL Autobuild
+        uses: github/codeql-action/autobuild@v1
+      
+      # Step 5 - Perform CodeQL Analysis
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v1

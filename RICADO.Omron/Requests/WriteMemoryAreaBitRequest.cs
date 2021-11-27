@@ -115,7 +115,7 @@ namespace RICADO.Omron.Requests
             data.AddRange(BitConverter.GetBytes((ushort)_values.Length).Reverse());
 
             // Bit Values
-            data.AddRange(_values.Select<bool, byte>(value => value == true ? 1 : 0));
+            data.AddRange(_values.Select<bool, byte>(value => value == true ? (byte)1 : (byte)0));
 
             return data;
         }

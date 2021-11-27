@@ -1,11 +1,7 @@
 # Action Name
 name: Main Automated Builds
 
-# Environment Variables
-env:
-  PROJECT_NAME: "RICADO.Omron"
-
-# Controls when the action will run. 
+# When the Action will Run
 on:
   push:
     branches:
@@ -15,7 +11,6 @@ on:
 
 # Workflow Jobs
 jobs:
-  # Build Job
   build:
     runs-on: ubuntu-latest
     steps:
@@ -23,59 +18,13 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v2
       
-      # Step 2 - Extract Environment Variables
-      - name: Extract Environment Variables
-        uses: FranzDiebold/github-env-vars-action@v2.3.0
-      
-      # Step 3 - Setup .NET 5 with GitHub Packages Authentication
-      - name: Setup .NET 5 with GitHub Packages Authentication
-        uses: actions/setup-dotnet@v1
+      # Step 2 - Build and Publish
+      - name: Build and Publish
+        uses: ricado-group/dotnet-library-build-release-action@v1.2
         with:
-          dotnet-version: '5.0.100'
-          source-url: https://nuget.pkg.github.com/ricado-group/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GH_ACTIONS_PAT }}
-      
-      # Step 4 - Restore NuGet Packages
-      - name: Restore NuGet Packages
-        run: dotnet restore "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj"
-      
-      # Step 5 - Build the Library
-      - name: Build the Library
-        run: dotnet build "${{ env.PROJECT_NAME }}/${{ env.PROJECT_NAME }}.csproj" -c Release
-      
-      # Step 6 - Pack the Library
-      - name: Pack the Library
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: dotnet pack "${{ env.PROJECT_NAME}}/${{ env.PROJECT_NAME }}.csproj" -c Release -p:PackageVersion=${{ env.CI_REF_NAME }}
-      
-      # Step 7 - Push the Package to GitHub Packages
-      - name: Push the Package to GitHub Packages
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: dotnet nuget push "${{ env.PROJECT_NAME }}/bin/Release/*.nupkg" -k ${{ secrets.GH_ACTIONS_PAT }} -s "https://nuget.pkg.github.com/ricado-group/index.json" --skip-duplicate
-      
-      # Step 8 - Push the Package to NuGet
-      - name: Push the Package to Nuget
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        run: dotnet nuget push "${{ env.PROJECT_NAME }}/bin/Release/*.nupkg" -k ${{ secrets.NUGET_APIKEY }} -s "https://api.nuget.org/v3/index.json" --skip-duplicate
-      
-      # Step 9 - Generate the Changelog
-      - name: Generate the Changelog
-        id: changelog
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: metcalfc/changelog-generator@v3.0.0
-        with:
-          myToken: ${{ secrets.GITHUB_TOKEN }}
-      
-      # Step 10 - Create New Release
-      - name: Create New Release
-        id: create-release
-        if: ${{ startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.CI_REF_NAME }}
-          release_name: Version ${{ env.CI_REF_NAME }}
-          body: |
-            ${{ steps.changelog.outputs.changelog }}
+          project-name: 'RICADO.Omron'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          private-nuget-url: 'https://nuget.pkg.github.com/ricado-group/index.json'
+          private-nuget-token: ${{ secrets.GH_ACTIONS_PAT }}
+          public-nuget-token: ${{ secrets.NUGET_APIKEY }}
+          publish-public: true
