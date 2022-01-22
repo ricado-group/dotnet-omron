@@ -25,6 +25,6 @@ jobs:
           project-name: 'RICADO.Omron'
           github-token: ${{ secrets.GITHUB_TOKEN }}
           private-nuget-url: 'https://nuget.pkg.github.com/ricado-group/index.json'
-          private-nuget-token: ${{ secrets.GH_ACTIONS_PAT }}
+          private-nuget-token: ${{ secrets.GH_PACKAGES_PAT }}
           public-nuget-token: ${{ secrets.NUGET_APIKEY }}
           publish-public: true

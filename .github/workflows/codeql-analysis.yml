@@ -37,7 +37,7 @@ jobs:
           dotnet-version: 6.0.x
           source-url: https://nuget.pkg.github.com/ricado-group/index.json
         env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GH_ACTIONS_PAT }}
+          NUGET_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_PAT }}
       
       # Step 4 - Build the Library
       - name: Run CodeQL Autobuild
