@@ -81,13 +81,13 @@ namespace RICADO.Omron.Channels
 
         internal override async Task InitializeAsync(int timeout, CancellationToken cancellationToken)
         {
+            if (!Semaphore.Wait(0))
+            {
+                await Semaphore.WaitAsync(cancellationToken);
+            }
+
             try
             {
-                if(!Semaphore.Wait(0))
-                {
-                    await Semaphore.WaitAsync(cancellationToken);
-                }
-
                 destroyClient();
 
                 await initializeClient(timeout, cancellationToken);

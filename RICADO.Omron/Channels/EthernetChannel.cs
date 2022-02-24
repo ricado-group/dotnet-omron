@@ -87,13 +87,13 @@ namespace RICADO.Omron.Channels
 
             while (attempts <= retries)
             {
+                if (!_semaphore.Wait(0))
+                {
+                    await _semaphore.WaitAsync(cancellationToken);
+                }
+
                 try
                 {
-                    if (!_semaphore.Wait(0))
-                    {
-                        await _semaphore.WaitAsync(cancellationToken);
-                    }
-                    
                     if (attempts > 0)
                     {
                         await DestroyAndInitializeClient(timeout, cancellationToken);
@@ -149,13 +149,13 @@ namespace RICADO.Omron.Channels
             {
                 if(e.Message.Contains("Service ID") && responseMessage.Length >= 9 && responseMessage.Span[9] != request.ServiceID)
                 {
+                    if (!_semaphore.Wait(0))
+                    {
+                        await _semaphore.WaitAsync(cancellationToken);
+                    }
+
                     try
                     {
-                        if (!_semaphore.Wait(0))
-                        {
-                            await _semaphore.WaitAsync(cancellationToken);
-                        }
-
                         await PurgeReceiveBuffer(timeout, cancellationToken);
                     }
                     catch
