@@ -25,7 +25,7 @@ jobs:
       
       # Step 2 - Initialize CodeQL
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v1
+        uses: github/codeql-action/init@v2
         with:
           languages: csharp
           queries: security-and-quality
@@ -41,8 +41,8 @@ jobs:
       
       # Step 4 - Build the Library
       - name: Run CodeQL Autobuild
-        uses: github/codeql-action/autobuild@v1
+        uses: github/codeql-action/autobuild@v2
       
       # Step 5 - Perform CodeQL Analysis
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v1
+        uses: github/codeql-action/analyze@v2
