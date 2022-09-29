@@ -32,7 +32,7 @@ jobs:
       
       # Step 3 - Setup .NET 6 with GitHub Packages Authentication
       - name: Setup .NET 6 with GitHub Packages Authentication
-        uses: actions/setup-dotnet@v2
+        uses: actions/setup-dotnet@v3.0.0
         with:
           dotnet-version: 6.0.x
           source-url: https://nuget.pkg.github.com/ricado-group/index.json
