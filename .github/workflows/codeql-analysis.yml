@@ -8,7 +8,6 @@ on:
 
 # Workflow Jobs
 jobs:
-  # Analyze Job
   analyze:
     name: Analyze
     runs-on: ubuntu-latest
@@ -23,26 +22,9 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v3
       
-      # Step 2 - Initialize CodeQL
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
+      # Step 2 - Run CodeQL
+      - name: Run CodeQL
+        uses: ricado-group/dotnet-library-codeql-action@v1
         with:
-          languages: csharp
-          queries: security-and-quality
-      
-      # Step 3 - Setup .NET 6 with GitHub Packages Authentication
-      - name: Setup .NET 6 with GitHub Packages Authentication
-        uses: actions/setup-dotnet@v3.0.2
-        with:
-          dotnet-version: 6.0.x
-          source-url: https://nuget.pkg.github.com/ricado-group/index.json
-        env:
-          NUGET_AUTH_TOKEN: ${{ secrets.GH_PACKAGES_PAT }}
-      
-      # Step 4 - Build the Library
-      - name: Run CodeQL Autobuild
-        uses: github/codeql-action/autobuild@v2
-      
-      # Step 5 - Perform CodeQL Analysis
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
+          private-nuget-url: 'https://nuget.pkg.github.com/ricado-group/index.json'
+          private-nuget-token: ${{ secrets.GH_PACKAGES_PAT }}

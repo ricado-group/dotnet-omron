@@ -8,6 +8,7 @@ on:
       - master
     tags:
       - '*.*.*'
+  pull_request:
 
 # Workflow Jobs
 jobs:
@@ -20,7 +21,7 @@ jobs:
       
       # Step 2 - Build and Publish
       - name: Build and Publish
-        uses: ricado-group/dotnet-library-build-release-action@v1.3
+        uses: ricado-group/dotnet-library-build-release-action@v1
         with:
           project-name: 'RICADO.Omron'
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -28,3 +29,4 @@ jobs:
           private-nuget-token: ${{ secrets.GH_PACKAGES_PAT }}
           public-nuget-token: ${{ secrets.NUGET_APIKEY }}
           publish-public: true
+          dotnet-version: 7.0.x
