@@ -1,11 +1,11 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net7.0;net6.0</TargetFrameworks>
-    <Authors>RICADO Group</Authors>
-    <Company>RICADO Group LP</Company>
-    <Description>An Omron PLC Communication Library for .NET 6/7 Applications</Description>
-    <Copyright>Copyright © RICADO Group LP 2009 - 2023</Copyright>
+    <TargetFrameworks>net8.0;net7.0;net6.0</TargetFrameworks>
+    <Authors>RICADO</Authors>
+    <Company>RICADO Limited</Company>
+    <Description>An Omron PLC Communication Library for .NET 6+ Applications</Description>
+    <Copyright>Copyright © RICADO Limited 2009 - 2024</Copyright>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageIcon>packageIcon.png</PackageIcon>
     <RepositoryUrl>https://github.com/ricado-group/dotnet-omron</RepositoryUrl>
