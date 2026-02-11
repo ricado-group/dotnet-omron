@@ -21,7 +21,7 @@ jobs:
       
       # Step 2 - Build and Publish
       - name: Build and Publish
-        uses: ricado-group/dotnet-library-build-release-action@v1
+        uses: ricado-group/dotnet-library-build-release-action@v2
         with:
           project-name: 'RICADO.Omron'
           github-token: ${{ secrets.GITHUB_TOKEN }}
