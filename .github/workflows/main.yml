@@ -21,7 +21,7 @@ jobs:
       contents: read
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       
       - name: Build
         uses: ricado-group/dotnet-library-build-release-action@v2
@@ -42,7 +42,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
       
       - name: Build and Publish
         uses: ricado-group/dotnet-library-build-release-action@v2
